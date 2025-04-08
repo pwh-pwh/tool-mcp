@@ -3,9 +3,11 @@
 
 [versions]
 guava = "33.0.0-jre"
+mcp = "0.4.0"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
+mcp = { module = "io.modelcontextprotocol:kotlin-sdk", version.ref = "mcp" }
 
 [plugins]
 jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.9.22" }
