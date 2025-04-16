@@ -25,6 +25,7 @@ dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
     implementation(libs.mcp)
+    implementation(libs.slf4j)
 }
 
 testing {

@@ -3,13 +3,58 @@
  */
 package org.coderpwh
 
-class App {
-    val greeting: String
-        get() {
-            return "Hello World!"
-        }
+import io.ktor.utils.io.streams.*
+import io.modelcontextprotocol.kotlin.sdk.*
+import io.modelcontextprotocol.kotlin.sdk.server.RegisteredTool
+import io.modelcontextprotocol.kotlin.sdk.server.Server
+import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
+import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.runBlocking
+import kotlinx.io.asSink
+import kotlinx.io.buffered
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.putJsonObject
+import kotlinx.serialization.json.put
+import java.security.MessageDigest
+
+
+fun String.md5(): String {
+    val bytes = MessageDigest.getInstance("MD5").digest(this.toByteArray())
+    return bytes.joinToString("") { "%02x".format(it) }
 }
 
 fun main() {
-    println(App().greeting)
+    val server = Server(
+        Implementation("tool-mcp", "1.0.0"),
+        ServerOptions(capabilities = ServerCapabilities(tools = ServerCapabilities.Tools(listChanged = true)))
+    )
+
+    val tools = listOf(RegisteredTool(Tool("md5", "Calculate the MD5 value of the input string", Tool.Input(
+        properties = buildJsonObject {
+            putJsonObject("str") {
+                put("type", "string")
+                put("description", "input string")
+            }
+        },
+        required = listOf("str")
+    )), { request ->
+        var inputStr = request.arguments["str"]!!.jsonPrimitive.content
+        CallToolResult(content = listOf(TextContent(inputStr.md5())))
+    }))
+    server.addTools(tools)
+
+    val transport = StdioServerTransport(
+        System.`in`.asInput(),
+        System.out.asSink().buffered()
+    )
+    runBlocking {
+        server.connect(transport)
+        val done = Job()
+        server.onClose {
+            done.complete()
+        }
+        done.join()
+    }
 }
