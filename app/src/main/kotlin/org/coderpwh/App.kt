@@ -18,6 +18,8 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.putJsonObject
 import kotlinx.serialization.json.put
 import java.security.MessageDigest
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 
 fun String.md5(): String {
@@ -25,24 +27,46 @@ fun String.md5(): String {
     return bytes.joinToString("") { "%02x".format(it) }
 }
 
+@OptIn(ExperimentalEncodingApi::class)
+fun String.base64() = Base64.Default.encode(this.encodeToByteArray())
+
 fun main() {
     val server = Server(
         Implementation("tool-mcp", "1.0.0"),
         ServerOptions(capabilities = ServerCapabilities(tools = ServerCapabilities.Tools(listChanged = true)))
     )
 
-    val tools = listOf(RegisteredTool(Tool("md5", "Calculate the MD5 value of the input string", Tool.Input(
-        properties = buildJsonObject {
-            putJsonObject("str") {
-                put("type", "string")
-                put("description", "input string")
-            }
-        },
-        required = listOf("str")
-    )), { request ->
-        var inputStr = request.arguments["str"]!!.jsonPrimitive.content
-        CallToolResult(content = listOf(TextContent(inputStr.md5())))
-    }))
+    val tools = listOf(
+        RegisteredTool(
+            Tool(
+                "md5", "Calculate the MD5 value of the input string", Tool.Input(
+                    properties = buildJsonObject {
+                        putJsonObject("str") {
+                            put("type", "string")
+                            put("description", "input string")
+                        }
+                    },
+                    required = listOf("str")
+                )
+            ), { request ->
+                var inputStr = request.arguments["str"]!!.jsonPrimitive.content
+                CallToolResult(content = listOf(TextContent(inputStr.md5())))
+            }), RegisteredTool(
+            Tool(
+                "base64", "Encode the string using Base64", Tool.Input(
+                    properties = buildJsonObject {
+                        putJsonObject("str") {
+                            put("type", "string")
+                            put("description", "input string")
+                        }
+                    },
+                    required = listOf("str")
+                )
+            ), { request ->
+                var inputStr = request.arguments["str"]!!.jsonPrimitive.content
+                CallToolResult(content = listOf(TextContent(inputStr.md5())))
+            })
+    )
     server.addTools(tools)
 
     val transport = StdioServerTransport(
