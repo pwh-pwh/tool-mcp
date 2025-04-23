@@ -64,7 +64,7 @@ fun main() {
                 )
             ), { request ->
                 var inputStr = request.arguments["str"]!!.jsonPrimitive.content
-                CallToolResult(content = listOf(TextContent(inputStr.md5())))
+                CallToolResult(content = listOf(TextContent(inputStr.base64())))
             })
     )
     server.addTools(tools)
